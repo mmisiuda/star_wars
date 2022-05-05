@@ -31,7 +31,7 @@ starships_raw = get_data('starships', 18)
 vehicles_raw = get_data('vehicles', 63)
 chars_raw = pd.read_parquet('StarWars_Characters.parquet')
 
-# function to insert id column for future joins
+# function to insert id column (for mapping, not for joins)
 
 def insert_id_col(df: pd.DataFrame) -> pd.DataFrame:
     
