@@ -31,7 +31,7 @@ starships_raw = get_data('starships', 18)
 vehicles_raw = get_data('vehicles', 63)
 chars_raw = pd.read_parquet('StarWars_Characters.parquet')
 
-# function to insert id column (for mapping, not for joins)
+# function to insert id column for future joins
 
 def insert_id_col(df: pd.DataFrame) -> pd.DataFrame:
     
@@ -275,32 +275,40 @@ connection_string: '****'
 
 # function for uploading csv's
 
-def upload_csv_to_blob(connection_string: str, container_name: str, df: pd.DataFrame):
+# function for uploading csv's to a blob storage in a form of "container_name"+.csv
 
-    
-    # Instantiate a new BlobServiceClient using a connection string
+def upload_csv_to_blob(connection_string: str, container_name: str, df: pd.DataFrame):
+    # instantiate a new BlobServiceClient using a blob storage connection string
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
 
-    # Instantiate a new ContainerClient
+    # instantiate a new ContainerClient
     container_client = blob_service_client.get_container_client(f'{container_name}')
-    try:
-       # Create new Container in the service
-       container_client.create_container()
-       properties = container_client.get_container_properties()
-    except ResourceExistsError:
-       print("Container already exists.")
+
+    # check if such container already exists, if not - create it
+    if container_client.exists():
+        # if container exists we overwrite the blob
+        output = df.to_csv(index_label='id', encoding='utf-8')
+
+        # instantiate a new BlobClient
+        blob_client = container_client.get_blob_client(f"{container_name}.csv")
+
+        # upload data
+        blob_client.upload_blob(output, blob_type="BlockBlob", overwrite=True)
+    else:
+        container_client.create_container()
 
     output = df.to_csv(index_label='id', encoding='utf-8')
-    
+
     # Instantiate a new BlobClient
     blob_client = container_client.get_blob_client(f"{container_name}.csv")
-    
+
     # upload data
     blob_client.upload_blob(output, blob_type="BlockBlob")
 
 # upload csv's to blob storage
 
 upload_csv_to_blob(connection_string=connection_string, container_name='characters', df=chars_df_final)
+upload_csv_to_blob(connection_string=connection_string, container_name='characters-help', df=chars_help_df)
 upload_csv_to_blob(connection_string=connection_string, container_name='species', df=species_df_final)
 upload_csv_to_blob(connection_string=connection_string, container_name='planets', df=planets_df_final)
 upload_csv_to_blob(connection_string=connection_string, container_name='starships', df=starships_df_final)
