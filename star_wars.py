@@ -271,46 +271,36 @@ vehicles_df_final = insert_id_col(vehicles_drop)
 
 # ## Send CSV to Azure Blob
 # provide connection string to Azure Blob Storage Account
-connection_string: '****'
-
-# function for uploading csv's
+conn_string: '****'
 
 # function for uploading csv's to a blob storage in a form of "container_name"+.csv
 
 def upload_csv_to_blob(connection_string: str, container_name: str, df: pd.DataFrame):
     # instantiate a new BlobServiceClient using a blob storage connection string
-    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    blob_service_client = BlobServiceClient.from_connection_string(conn_string)
 
     # instantiate a new ContainerClient
     container_client = blob_service_client.get_container_client(f'{container_name}')
 
     # check if such container already exists, if not - create it
-    if container_client.exists():
-        # if container exists we overwrite the blob
-        output = df.to_csv(index_label='id', encoding='utf-8')
-
-        # instantiate a new BlobClient
-        blob_client = container_client.get_blob_client(f"{container_name}.csv")
-
-        # upload data
-        blob_client.upload_blob(output, blob_type="BlockBlob", overwrite=True)
-    else:
+    if not container_client.exists():
         container_client.create_container()
 
+    # if container exists we overwrite the blob
     output = df.to_csv(index_label='id', encoding='utf-8')
 
     # Instantiate a new BlobClient
     blob_client = container_client.get_blob_client(f"{container_name}.csv")
 
     # upload data
-    blob_client.upload_blob(output, blob_type="BlockBlob")
+    blob_client.upload_blob(output, blob_type="BlockBlob", overwrite=True)
 
 # upload csv's to blob storage
 
-upload_csv_to_blob(connection_string=connection_string, container_name='characters', df=chars_df_final)
-upload_csv_to_blob(connection_string=connection_string, container_name='characters-help', df=chars_help_df)
-upload_csv_to_blob(connection_string=connection_string, container_name='species', df=species_df_final)
-upload_csv_to_blob(connection_string=connection_string, container_name='planets', df=planets_df_final)
-upload_csv_to_blob(connection_string=connection_string, container_name='starships', df=starships_df_final)
-upload_csv_to_blob(connection_string=connection_string, container_name='vehicles', df=vehicles_df_final)
+upload_csv_to_blob(connection_string=conn_string, container_name='characters', df=chars_df_final)
+upload_csv_to_blob(connection_string=conn_string, container_name='characters-help', df=chars_help_df)
+upload_csv_to_blob(connection_string=conn_string, container_name='species', df=species_df_final)
+upload_csv_to_blob(connection_string=conn_string, container_name='planets', df=planets_df_final)
+upload_csv_to_blob(connection_string=conn_string, container_name='starships', df=starships_df_final)
+upload_csv_to_blob(connection_string=conn_string, container_name='vehicles', df=vehicles_df_final)
 
